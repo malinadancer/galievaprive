@@ -620,7 +620,7 @@
 <section class="hero" id="hero">
   <div class="hero-content">
     <h1>Я Ирина<br>Галиева</h1>
-    <p>Вы хотите картину — я помогу выбрать ту, что отзовётся именно Вам.</p>
+    <p>Вы хотите картину — помогу выбрать ту, что отзовётся именно Вам.</p>
     <div class="hero-cta">
       <button class="btn btn-cta-main" id="quizBtn">Выбрать картину</button>
       <button class="btn btn-ghost btn-cta-ghost" id="skipBtn">Сначала посмотреть</button>
@@ -1153,7 +1153,7 @@ function slideHTML(item, i, total){
   const isFinish = i === total-1;
   const nextLabel = item.type === 'interior' ? 'Дальше — другие работы' : 'Дальше';
   const navBtn = isFinish
-    ? `<button class="slide-nav-btn finish" data-nav="finish">Хочу свою подборку</button>`
+    ? `<button class="slide-nav-btn finish" data-nav="finish">Хочу посмотреть ещё</button>`
     : `<button class="slide-nav-btn" data-nav="next">${nextLabel}</button>`;
   const navRow = `<div class="slide-nav">${backBtn}${navBtn}</div>`;
 
