@@ -573,7 +573,6 @@
     }
     .slide{scroll-snap-align:start;}
 
-    /* Интерьерный слайд на мобиле: меньше отступов, чтобы картинка шла сразу под подписью */
     .interior-eyebrow{margin-bottom:14px;}
     .interior-stage{gap:14px;}
     .interior-figure{gap:10px;}
@@ -582,7 +581,7 @@
     .interior-figure, .interior-figure--video{flex:1 1 auto; width:100%;}
     .interior-photo{max-height:44vh;}
     .interior-video-frame{max-height:none; aspect-ratio:16/9;}
-    .interior-video-frame video{object-fit:contain;}
+    .interior-video-frame video{object-fit:cover;}
     .proof-quotes{grid-template-columns:1fr;}
     .quiz{padding:8vh 6vw;}
     .quiz-inner{max-width:100%;}
@@ -964,6 +963,7 @@ document.getElementById('restartBtn').addEventListener('click', ()=>{
   quizSection.hidden = false;
   quizSection.classList.add('instant', 'revealed');
   stepIndex = 0; renderQuiz();
+  stopScrollTriggers();
   quizSection.scrollIntoView({behavior:'smooth'});
 });
 
@@ -977,6 +977,8 @@ function onQuizComplete(){
   quizSection.style.opacity = '';
   quizSection.style.maxHeight = '';
   quizSection.style.transform = '';
+
+  stopScrollTriggers();
 
   loadingScreen.hidden = false;
   loadingScreen.classList.remove('hide');
@@ -999,6 +1001,7 @@ function onSkipToGallery(){
   quizSection.style.opacity = '';
   quizSection.style.maxHeight = '';
   quizSection.style.transform = '';
+  stopScrollTriggers();
   showGallery();
 }
 
@@ -1027,70 +1030,92 @@ function showWelcomeAndGallery(welcomeScreen){
   });
 })();
 
-(function initHeroScrollReveal(){
-  const quizSection = document.getElementById('quizSection');
-  let touchStartY = null;
+/* ---------- Скролл-триггер открытия квиза из hero ---------- */
+let scrollTriggersActive = false;
 
-  function revealQuiz(instant){
-    // Если квиз уже открыт — ничего не делаем
-    if(!quizSection.hidden) return;
+function onWheel(e){
+  if(window.scrollY > window.innerHeight * 0.3) return;
+  if(e.deltaY > 0) revealQuiz(false);
+}
+let touchStartY = null;
+function onTouchStart(e){
+  if(e.touches && e.touches[0]) touchStartY = e.touches[0].clientY;
+}
+function onTouchMove(e){
+  if(window.scrollY > window.innerHeight * 0.3) return;
+  if(touchStartY === null) return;
+  const y = e.touches[0]?.clientY ?? touchStartY;
+  if(touchStartY - y > 8) revealQuiz(false);
+}
+function onKey(e){
+  if(window.scrollY > window.innerHeight * 0.3) return;
+  if(e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ') revealQuiz(false);
+}
 
-    // Скрываем всё, что могло быть открыто после показа
-    document.getElementById('gallery').hidden = true;
-    document.getElementById('closing').hidden = true;
-    document.getElementById('proof').hidden = true;
-    document.getElementById('about').hidden = true;
-    document.getElementById('siteFooter').hidden = true;
-    document.getElementById('savePopup').classList.remove('show');
-
-    quizSection.hidden = false;
-    stepIndex = 0;
-    renderQuiz();
-    logEvent('quiz_start');
-
-    if(instant){
-      quizSection.classList.add('instant', 'revealed');
-      requestAnimationFrame(()=>{
-        requestAnimationFrame(()=>{ quizSection.classList.remove('instant'); });
-      });
-    } else {
-      requestAnimationFrame(()=>{
-        requestAnimationFrame(()=>{ quizSection.classList.add('revealed'); });
-      });
-    }
-    window.removeEventListener('wheel', onWheel);
-    window.removeEventListener('touchmove', onTouchMove);
-    window.removeEventListener('touchstart', onTouchStart);
-    window.removeEventListener('keydown', onKey);
-  }
-
-  function onWheel(e){
-    if(e.deltaY > 0) revealQuiz(false);
-  }
-  function onTouchStart(e){
-    if(e.touches && e.touches[0]) touchStartY = e.touches[0].clientY;
-  }
-  function onTouchMove(e){
-    if(touchStartY === null) return;
-    const y = e.touches[0]?.clientY ?? touchStartY;
-    if(touchStartY - y > 8) revealQuiz(false);
-  }
-  function onKey(e){
-    if(e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ') revealQuiz(false);
-  }
-
+function startScrollTriggers(){
+  if(scrollTriggersActive) return;
+  scrollTriggersActive = true;
   window.addEventListener('wheel', onWheel, {passive:true});
   window.addEventListener('touchstart', onTouchStart, {passive:true});
   window.addEventListener('touchmove', onTouchMove, {passive:true});
   window.addEventListener('keydown', onKey);
+}
+function stopScrollTriggers(){
+  scrollTriggersActive = false;
+  window.removeEventListener('wheel', onWheel);
+  window.removeEventListener('touchmove', onTouchMove);
+  window.removeEventListener('touchstart', onTouchStart);
+  window.removeEventListener('keydown', onKey);
+}
 
-  document.getElementById('quizBtn').addEventListener('click', ()=>{
-    revealQuiz(true);
-    if(!quizSection.hidden){
-      quizSection.scrollIntoView({behavior:'smooth'});
-    }
-  });
-})();
+function revealQuiz(instant){
+  const quizSection = document.getElementById('quizSection');
+  if(!quizSection.hidden) return;
+
+  document.getElementById('gallery').hidden = true;
+  document.getElementById('closing').hidden = true;
+  document.getElementById('proof').hidden = true;
+  document.getElementById('about').hidden = true;
+  document.getElementById('siteFooter').hidden = true;
+  document.getElementById('savePopup').classList.remove('show');
+
+  quizSection.hidden = false;
+  stepIndex = 0;
+  renderQuiz();
+  logEvent('quiz_start');
+
+  if(instant){
+    quizSection.classList.add('instant', 'revealed');
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{ quizSection.classList.remove('instant'); });
+    });
+  } else {
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{ quizSection.classList.add('revealed'); });
+    });
+  }
+
+  stopScrollTriggers();
+}
+
+// Запускаем скролл-триггеры сразу при загрузке (мы на hero)
+startScrollTriggers();
+
+// При возврате на hero через logo — перезапускаем триггеры (если квиз скрыт)
+document.getElementById('siteMark').addEventListener('click', ()=>{
+  const quizSection = document.getElementById('quizSection');
+  if(quizSection.hidden){
+    setTimeout(startScrollTriggers, 600);
+  }
+});
+
+document.getElementById('quizBtn').addEventListener('click', ()=>{
+  revealQuiz(true);
+  const quizSection = document.getElementById('quizSection');
+  if(!quizSection.hidden){
+    quizSection.scrollIntoView({behavior:'smooth'});
+  }
+});
 
 function getResults(){
   if(!state.mood || !state.space){
