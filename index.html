@@ -294,7 +294,6 @@
     font-family:var(--font-ui); flex:1 1 100%; margin-top:2px;
   }
 
-  /* canvas-frame: БЕЗ overflow:hidden — подпись снизу выходит за границы */
   .canvas-frame{
     position:relative; display:flex; align-items:center; justify-content:center;
     max-height:72vh;
@@ -551,7 +550,7 @@
   }
   @media (max-width:860px){
     .slide{grid-template-columns:1fr; gap:5vh; padding:0 20px; min-height:auto;}
-    .slide.slide-interior{padding:0 20px;}
+    .slide.slide-interior{padding:0 20px; justify-content:flex-start; min-height:auto;}
     .gallery-head{padding:0 20px;}
     .canvas-frame{max-height:52vh; margin-top:2vh; margin-bottom:14px;}
     .canvas-frame .painting{max-height:calc(52vh - 28px);}
@@ -567,13 +566,17 @@
     .hands-motif{top:3vh; width:60vw;}
     .scroll-badge{width:72px; height:72px; bottom:3vh;}
 
-    /* На мобиле snap возвращаем, touch-action:auto разрешает и вертикаль, и горизонталь */
     .track{
       scroll-snap-type:x mandatory;
       touch-action:auto;
       overscroll-behavior-x:contain;
     }
     .slide{scroll-snap-align:start;}
+
+    /* Интерьерный слайд на мобиле: меньше отступов, чтобы картинка шла сразу под подписью */
+    .interior-eyebrow{margin-bottom:14px;}
+    .interior-stage{gap:14px;}
+    .interior-figure{gap:10px;}
 
     .interior-stage{flex-direction:column;}
     .interior-figure, .interior-figure--video{flex:1 1 auto; width:100%;}
@@ -1025,19 +1028,26 @@ function showWelcomeAndGallery(welcomeScreen){
 })();
 
 (function initHeroScrollReveal(){
-  let revealed = false;
   const quizSection = document.getElementById('quizSection');
   let touchStartY = null;
 
   function revealQuiz(instant){
-    if(revealed) return;
-    revealed = true;
-    if(quizSection.hidden){
-      quizSection.hidden = false;
-      stepIndex = 0;
-      renderQuiz();
-      logEvent('quiz_start');
-    }
+    // Если квиз уже открыт — ничего не делаем
+    if(!quizSection.hidden) return;
+
+    // Скрываем всё, что могло быть открыто после показа
+    document.getElementById('gallery').hidden = true;
+    document.getElementById('closing').hidden = true;
+    document.getElementById('proof').hidden = true;
+    document.getElementById('about').hidden = true;
+    document.getElementById('siteFooter').hidden = true;
+    document.getElementById('savePopup').classList.remove('show');
+
+    quizSection.hidden = false;
+    stepIndex = 0;
+    renderQuiz();
+    logEvent('quiz_start');
+
     if(instant){
       quizSection.classList.add('instant', 'revealed');
       requestAnimationFrame(()=>{
@@ -1076,7 +1086,9 @@ function showWelcomeAndGallery(welcomeScreen){
 
   document.getElementById('quizBtn').addEventListener('click', ()=>{
     revealQuiz(true);
-    quizSection.scrollIntoView({behavior:'smooth'});
+    if(!quizSection.hidden){
+      quizSection.scrollIntoView({behavior:'smooth'});
+    }
   });
 })();
 
